@@ -13,8 +13,6 @@
     "stripInternal": true,
     "newLine": "lf",
 
-    "composite": true,
-
     "assumeChangesOnlyAffectDirectDependencies": true,
 
     "types": ["node"]
