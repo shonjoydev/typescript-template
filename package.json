@@ -20,14 +20,18 @@
     "// ━━━━━━━━━━━━━━━━━ TESTING ━━━━━━━━━━━━━━━━━━━": "",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
+    "test:ci": "vitest run --coverage",
     "// ━━━━━━━━━━━━━━ CODE QUALITY ━━━━━━━━━━━━━━━━": "",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,json,md}\"",
+    "type-check": "tsc --noEmit",
+    "// ━━━━━━━━━━━━━━━━━━ CI/CD ━━━━━━━━━━━━━━━━━━━━━": "",
+    "ci": "pnpm lint && pnpm type-check && pnpm test:ci && pnpm build",
     "// ━━━━━━━━━━━━━━━━━ SETUP ━━━━━━━━━━━━━━━━━━━━━": "",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "prepare": "husky"
   },
   "keywords": [
     "typescript",
@@ -41,6 +45,8 @@
   },
   "packageManager": "pnpm@10.22.0",
   "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
@@ -55,12 +61,31 @@
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-unused-imports": "^4.3.0",
     "globals": "^16.5.0",
+    "husky": "^9.1.7",
     "jiti": "^2.6.1",
+    "lint-staged": "^16.2.6",
     "prettier": "^3.6.2",
     "tsc-alias": "^1.8.16",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.47.0",
     "vitest": "^4.0.10"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write",
+      "vitest related --run --passWithNoTests"
+    ],
+    "*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "*.{css,scss,less}": [
+      "prettier --write"
+    ]
   }
 }

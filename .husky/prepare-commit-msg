@@ -1,0 +1,20 @@
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Only modify if it's a new commit (not merge, amend, etc)
+if [ -z "$COMMIT_SOURCE" ]; then
+  # Get current branch name
+  BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+  # Extract ticket number (e.g., JIRA-123, TICKET-456)
+  TICKET=$(echo "$BRANCH_NAME" | grep -oE '[A-Z]+-[0-9]+')
+
+  # If ticket found and not already in message
+  if [ -n "$TICKET" ]; then
+    if ! grep -q "$TICKET" "$COMMIT_MSG_FILE"; then
+      # Prepend ticket to commit message
+      sed -i.bak -e "1s/^/[$TICKET] /" "$COMMIT_MSG_FILE"
+      rm "$COMMIT_MSG_FILE.bak"
+    fi
+  fi
+fi

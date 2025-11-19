@@ -540,3 +540,481 @@ Create `tests/setup.ts`:
   }
 }
 ```
+
+---
+
+## 6. Git Hooks Setup (Husky + Lint-Staged + Commitlint)
+
+Automate code quality checks and enforce commit conventions with Git hooks.
+
+### 6.1 Install Dependencies
+
+```bash
+pnpm add -D husky lint-staged @commitlint/cli @commitlint/config-conventional
+```
+
+### 6.2 Initialize Husky
+
+```bash
+pnpm exec husky init
+```
+
+This creates:
+
+- `.husky/` directory
+- `.husky/pre-commit` hook
+- Adds `"prepare": "husky"` to package.json
+
+### 6.3 Configure Lint-Staged
+
+Add to `package.json`:
+
+```json
+{
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write",
+      "vitest related --run --passWithNoTests"
+    ],
+    "*.{js,jsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md,yml,yaml}": ["prettier --write"]
+  }
+}
+```
+
+### 6.4 Create Pre-Commit Hook
+
+**`.husky/pre-commit`**
+
+```bash
+# Run lint-staged for fast checks on staged files only
+pnpm lint-staged
+```
+
+### 6.5 Configure Commitlint
+
+Create `commitlint.config.ts`:
+
+```javascript
+module.exports = {
+  extends: ['@commitlint/config-conventional'],
+  rules: {
+    // Type enforcement
+    'type-enum': [
+      2,
+      'always',
+      [
+        'feat', // A new feature
+        'fix', // A bug fix
+        'docs', // Documentation only changes
+        'style', // Changes that do not affect the meaning of the code
+        'refactor', // A code change that neither fixes a bug nor adds a feature
+        'perf', // A code change that improves performance
+        'test', // Adding missing tests or correcting existing tests
+        'build', // Changes that affect the build system or external dependencies
+        'ci', // Changes to our CI configuration files and scripts
+        'chore', // Other changes that don't modify src or test files
+        'revert', // Reverts a previous commit
+      ],
+    ],
+
+    // Scope
+    'scope-enum': [
+      2,
+      'always',
+      [
+        'api', // Backend API changes
+        'ui', // Frontend UI changes
+        'db', // Database changes
+        'auth', // Authentication/Authorization
+        'core', // Core functionality
+        'config', // Configuration changes
+        'deps', // Dependency updates
+        'release', // Release-related
+        'ci', // CI/CD changes
+        'docs', // Documentation
+        'test', // Test-related
+      ],
+    ],
+    // 'scope-empty': [2, 'never'], // Scope is required
+    'scope-empty': [0], // Allow empty scope (optional)
+    'scope-case': [2, 'always', 'lower-case'],
+
+    // Type rules
+    'type-empty': [2, 'never'],
+    'type-case': [2, 'always', 'lower-case'],
+
+    // Header rules
+    'header-max-length': [2, 'always', 100],
+
+    // Subject rules
+    'subject-empty': [2, 'never'],
+    'subject-full-stop': [2, 'never', '.'],
+    'subject-case': [2, 'always', 'lower-case'],
+
+    // Body rules (OPTIONAL)
+    'body-leading-blank': [1, 'always'], // Warning only
+    'body-max-line-length': [2, 'always', 100],
+
+    // Footer rules
+    'footer-leading-blank': [1, 'always'], // Warning only
+    'footer-max-line-length': [0], // Disabled
+  },
+};
+```
+
+### 6.6 Create Commit-Msg Hook
+
+**`.husky/commit-msg`**
+
+```bash
+# Validate commit message
+pnpm commitlint --edit $1
+```
+
+### 6.7 Create Pre-Push Hook (Optional but Recommended)
+
+**`.husky/pre-push`**
+
+```bash
+echo "🚀 Running pre-push checks..."
+
+# Get current branch
+branch=$(git branch --show-current)
+
+# Protect main/master branch
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo "❌ Direct push to $branch is not allowed!"
+  echo "Please create a feature branch and submit a PR."
+  exit 1
+fi
+
+# Type check
+echo "🔍 Running type check..."
+pnpm type-check || exit 1
+
+# Run tests with coverage
+echo "🧪 Running tests..."
+pnpm test:ci || exit 1
+
+# Check build
+echo "🏗️  Building project..."
+pnpm build || exit 1
+
+# Check for sensitive data (optional)
+echo "🔒 Checking for sensitive data..."
+if git diff --cached --name-only | xargs grep -l -i -E '(api[_-]?key|password|secret|token|private[_-]?key)' > /dev/null 2>&1; then
+  echo "⚠️  Warning: Possible sensitive data detected!"
+  echo "Please review your changes carefully."
+fi
+
+echo "✅ All pre-push checks passed!"
+```
+
+### 6.8 Create Prepare-Commit-Msg Hook (Optional - Auto-add Ticket Numbers)
+
+Automatically prepend ticket numbers from branch names to commit messages.
+
+**`.husky/prepare-commit-msg`**
+
+```bash
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Only modify if it's a new commit (not merge, amend, etc)
+if [ -z "$COMMIT_SOURCE" ]; then
+  # Get current branch name
+  BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+  # Extract ticket number (e.g., JIRA-123, TICKET-456)
+  TICKET=$(echo "$BRANCH_NAME" | grep -oE '[A-Z]+-[0-9]+')
+
+  # If ticket found and not already in message
+  if [ -n "$TICKET" ]; then
+    if ! grep -q "$TICKET" "$COMMIT_MSG_FILE"; then
+      # Prepend ticket to commit message
+      sed -i.bak -e "1s/^/[$TICKET] /" "$COMMIT_MSG_FILE"
+      rm "$COMMIT_MSG_FILE.bak"
+    fi
+  fi
+fi
+```
+
+**Usage Example:**
+
+```bash
+# Branch name: feature/JIRA-123-add-authentication
+git commit -m "feat: add user login"
+# Result: "[JIRA-123] feat: add user login"
+```
+
+### 6.9 Create Post-Commit Hook (Optional - Notifications & Analytics)
+
+Show notifications and track commit statistics after successful commits.
+
+**`.husky/post-commit`**
+
+```bash
+# Get commit details
+COMMIT_MSG=$(git log -1 --pretty=%B)
+COMMIT_HASH=$(git log -1 --pretty=%h)
+COMMIT_COUNT=$(git rev-list --count HEAD)
+
+echo "✅ Commit successful!"
+echo "📝 Hash: $COMMIT_HASH"
+echo "💬 Message: $COMMIT_MSG"
+
+# Milestone celebrations
+if [ $((COMMIT_COUNT % 10)) -eq 0 ]; then
+  echo "🎉 Milestone! Commit #$COMMIT_COUNT"
+fi
+
+if [ $((COMMIT_COUNT % 100)) -eq 0 ]; then
+  echo "🚀 WOW! $COMMIT_COUNT commits! You're on fire! 🔥"
+fi
+
+# Optional: Desktop notification (uncomment for your OS)
+# macOS:
+# osascript -e "display notification \"$COMMIT_MSG\" with title \"✅ Commit $COMMIT_HASH\""
+
+# Linux (requires notify-send):
+# notify-send "✅ Commit Successful" "$COMMIT_MSG"
+
+# Windows (PowerShell):
+# powershell -Command "New-BurntToastNotification -Text 'Commit Successful', '$COMMIT_MSG'"
+```
+
+### 6.10 Create Post-Merge Hook (Optional - Dependency Updates)
+
+Automatically detect and notify about dependency changes after merging/pulling.
+
+**`.husky/post-merge`**
+
+```bash
+echo "🔄 Post-merge checks..."
+
+# Get list of changed files
+changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)"
+
+# Function to check if file changed
+check_run() {
+  echo "$changed_files" | grep --quiet "$1" && eval "$2"
+}
+
+# Check package.json
+check_run "package.json" "echo '📦 package.json changed!'; echo '⚠️  Run: pnpm install'"
+
+# Check lock file
+check_run "pnpm-lock.yaml" "echo '🔒 Lock file changed!'; echo '⚠️  Run: pnpm install'"
+
+# Check environment example
+check_run ".env.example" "echo '🔧 .env.example updated!'; echo '⚠️  Update your .env file'"
+
+# Check TypeScript config
+check_run "tsconfig.json" "echo '⚙️  TypeScript config changed!'; echo 'ℹ️  Review tsconfig changes'"
+
+# Optional: Auto-install dependencies (uncomment to enable)
+# if echo "$changed_files" | grep -q "package.json\|pnpm-lock.yaml"; then
+#   echo "📦 Installing dependencies automatically..."
+#   pnpm install
+# fi
+
+echo "✅ Post-merge checks complete!"
+```
+
+**What it does:**
+
+- Detects changes to `package.json` → Reminds you to run `pnpm install`
+- Detects changes to `pnpm-lock.yaml` → Reminds you to run `pnpm install`
+- Detects changes to `.env.example` → Reminds you to update `.env`
+- Optional: Can auto-install dependencies (commented out by default)
+
+### 6.11 Git Hook Strategy
+
+| Hook           | Purpose                 | When it Runs                 |
+| -------------- | ----------------------- | ---------------------------- |
+| **pre-commit** | Fast quality checks     | Before commit is created     |
+| **commit-msg** | Validate message format | After writing commit message |
+| **pre-push**   | Full validation         | Before pushing to remote     |
+
+### 6.12 Valid Commit Message Examples
+
+```bash
+# Without scope (valid)
+git commit -m "feat: add user authentication"
+git commit -m "fix: resolve login bug"
+git commit -m "docs: update readme"
+
+# With scope (also valid)
+git commit -m "feat(auth): add JWT support"
+git commit -m "fix(api): handle null response"
+git commit -m "test(user): add unit tests"
+
+# With body and footer
+git commit -m "feat(api): add user endpoint" \
+  -m "Added REST API endpoint for user management" \
+  -m "Closes #123"
+
+# With prepare-commit-msg (auto-adds ticket from branch)
+# Branch: feature/JIRA-123-add-login
+git commit -m "feat: add login form"
+# Result: "[JIRA-123] feat: add login form"
+```
+
+### 6.13 Skip Hooks (Emergency Only)
+
+```bash
+# Skip pre-commit and commit-msg
+git commit --no-verify -m "fix: urgent hotfix"
+
+# Skip pre-push
+git push --no-verify
+
+# Skip all hooks
+HUSKY=0 git commit -m "emergency fix"
+```
+
+### 6.14 Update Package.json Scripts
+
+```json
+{
+  "scripts": {
+    "// ━━━━━━━━━━━━━━━━━━ CI/CD ━━━━━━━━━━━━━━━━━━━━━": "",
+    "ci": "pnpm lint && pnpm type-check && pnpm test:ci && pnpm build",
+    "// ━━━━━━━━━━━━━━━━ GIT HOOKS ━━━━━━━━━━━━━━━━━": "",
+    "prepare": "husky"
+  }
+}
+```
+
+## 7. GitHub Actions CI/CD
+
+Automate testing, building, and deployment with GitHub Actions.
+
+### 11.1 CI Pipeline (Continuous Integration)
+
+`.github/workflows/ci.yml`
+
+```yml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Quality Checks
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔍 Run linter
+        run: pnpm lint
+
+      - name: 💅 Check formatting
+        run: pnpm format:check
+
+      - name: 🔎 Type check
+        run: pnpm type-check
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Test on Multiple Node Versions
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  test:
+    name: Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    needs: quality
+
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🧪 Run tests
+        run: pnpm test:ci
+
+      - name: 📊 Upload coverage to Codecov
+        if: matrix.node-version == 20
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Build
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🏗️ Build project
+        run: pnpm build
+
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+```
