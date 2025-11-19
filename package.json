@@ -17,6 +17,10 @@
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "// ━━━━━━━━━━━━━━━━ PRODUCTION ━━━━━━━━━━━━━━━━━": "",
     "start": "node dist/index.js",
+    "// ━━━━━━━━━━━━━━━━━ TESTING ━━━━━━━━━━━━━━━━━━━": "",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "// ━━━━━━━━━━━━━━ CODE QUALITY ━━━━━━━━━━━━━━━━": "",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -41,6 +45,8 @@
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.47.0",
+    "@vitest/coverage-v8": "^4.0.10",
+    "@vitest/ui": "^4.0.10",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
@@ -54,6 +60,7 @@
     "tsc-alias": "^1.8.16",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.47.0"
+    "typescript-eslint": "^8.47.0",
+    "vitest": "^4.0.10"
   }
 }

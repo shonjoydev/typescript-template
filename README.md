@@ -698,3 +698,80 @@ Thumbs.db
   }
 }
 ```
+
+---
+
+## 5. Testing Setup (Vitest)
+
+Fast, modern unit testing powered by Vite.
+
+### 5.1 Install Vitest
+
+```bash
+pnpm add -D vitest @vitest/ui @vitest/coverage-v8
+```
+
+### 5.2 Create `vitest.config.ts`
+
+```typescript
+import { resolve } from 'node:path';
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/**/*.{test,spec}.{js,ts}', 'tests/**/*.{test,spec}.{js,ts}'],
+    exclude: ['node_modules', 'dist', 'build', '.idea', '.git', '.cache'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/*.interface.ts',
+        'src/**/*.type.ts',
+        'src/**/index.ts',
+        'src/**/*.test.ts',
+        'src/**/*.spec.ts',
+        'src/**/__tests__/**',
+        'src/**/__mocks__/**',
+      ],
+      thresholds: {
+        branches: 80,
+        functions: 80,
+        lines: 80,
+        statements: 80,
+      },
+    },
+    testTimeout: 10000,
+    hookTimeout: 10000,
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+    },
+  },
+});
+```
+
+### 5.3 Create Setup file
+
+create `tests/setup.ts`
+
+```ts
+/// <reference types="vitest/globals" />
+```
+
+### 5.4 Add Test Scripts to `package.json`
+
+```json
+{
+  "scripts": {
+    "// ━━━━━━━━━━━━━━━━━ TESTING ━━━━━━━━━━━━━━━━━━━": "",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
+  }
+}
+```
