@@ -7,6 +7,17 @@
   "files": [
     "dist"
   ],
+  "scripts": {
+    "// ━━━━━━━━━━━━━━━━━━ BUILD ━━━━━━━━━━━━━━━━━━━━": "",
+    "clean": "rm -rf dist coverage",
+    "prebuild": "pnpm clean",
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build:watch": "tsc -p tsconfig.build.json --watch & tsc-alias -p tsconfig.build.json --watch",
+    "// ━━━━━━━━━━━━━━━ DEVELOPMENT ━━━━━━━━━━━━━━━━━": "",
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "// ━━━━━━━━━━━━━━━━ PRODUCTION ━━━━━━━━━━━━━━━━━": "",
+    "start": "node dist/index.js"
+  },
   "keywords": [
     "typescript",
     "template"
