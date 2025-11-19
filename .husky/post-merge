@@ -1,0 +1,29 @@
+echo "🔄 Post-merge checks..."
+
+# Get list of changed files
+changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)"
+
+# Function to check if file changed
+check_run() {
+  echo "$changed_files" | grep --quiet "$1" && eval "$2"
+}
+
+# Check package.json
+check_run "package.json" "echo '📦 package.json changed!'; echo '⚠️  Run: pnpm install'"
+
+# Check lock file
+check_run "pnpm-lock.yaml" "echo '🔒 Lock file changed!'; echo '⚠️  Run: pnpm install'"
+
+# Check environment example
+check_run ".env.example" "echo '🔧 .env.example updated!'; echo '⚠️  Update your .env file'"
+
+# Check TypeScript config
+check_run "tsconfig.json" "echo '⚙️  TypeScript config changed!'; echo 'ℹ️  Review tsconfig changes'"
+
+# Optional: Auto-install dependencies (uncomment to enable)
+# if echo "$changed_files" | grep -q "package.json\|pnpm-lock.yaml"; then
+#   echo "📦 Installing dependencies automatically..."
+#   pnpm install
+# fi
+
+echo "✅ Post-merge checks complete!"

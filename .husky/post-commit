@@ -1,0 +1,27 @@
+# Get commit details
+COMMIT_MSG=$(git log -1 --pretty=%B)
+COMMIT_HASH=$(git log -1 --pretty=%h)
+COMMIT_COUNT=$(git rev-list --count HEAD)
+
+echo "✅ Commit successful!"
+echo "📝 Hash: $COMMIT_HASH"
+echo "💬 Message: $COMMIT_MSG"
+
+# Milestone celebrations
+if [ $((COMMIT_COUNT % 10)) -eq 0 ]; then
+  echo "🎉 Milestone! Commit #$COMMIT_COUNT"
+fi
+
+if [ $((COMMIT_COUNT % 100)) -eq 0 ]; then
+  echo "🚀 WOW! $COMMIT_COUNT commits! You're on fire! 🔥"
+fi
+
+# Optional: Desktop notification (uncomment for your OS)
+# macOS:
+# osascript -e "display notification \"$COMMIT_MSG\" with title \"✅ Commit $COMMIT_HASH\""
+
+# Linux (requires notify-send):
+# notify-send "✅ Commit Successful" "$COMMIT_MSG"
+
+# Windows (PowerShell):
+# powershell -Command "New-BurntToastNotification -Text 'Commit Successful', '$COMMIT_MSG'"

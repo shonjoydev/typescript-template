@@ -1,0 +1,22 @@
+# Get current branch
+branch=$(git branch --show-current)
+
+# Protect main/master branch
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo "❌ Direct push to $branch is not allowed!"
+  echo "Please create a feature branch and submit a PR."
+  exit 1
+fi
+
+# Run all CI checks
+echo "🔍 Running CI checks (type-check, tests, build)..."
+pnpm run ci || exit 1
+
+# Check for sensitive data (optional)
+echo "🔒 Checking for sensitive data..."
+if git diff --cached --name-only | xargs grep -l -i -E '(api[_-]?key|password|secret|token|private[_-]?key)' > /dev/null 2>&1; then
+  echo "⚠️  Warning: Possible sensitive data detected!"
+  echo "Please review your changes carefully."
+fi
+
+echo "✅ All pre-push checks passed!"
