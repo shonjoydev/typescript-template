@@ -16,7 +16,9 @@
     "// ━━━━━━━━━━━━━━━ DEVELOPMENT ━━━━━━━━━━━━━━━━━": "",
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "// ━━━━━━━━━━━━━━━━ PRODUCTION ━━━━━━━━━━━━━━━━━": "",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "// ━━━━━━━━━━━━━━━━━ SETUP ━━━━━━━━━━━━━━━━━━━━━": "",
+    "preinstall": "npx only-allow pnpm"
   },
   "keywords": [
     "typescript",
@@ -24,6 +26,10 @@
   ],
   "author": "shonjoydev",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0 <23.0.0",
+    "pnpm": ">=8.0.0"
+  },
   "packageManager": "pnpm@10.22.0",
   "devDependencies": {
     "@types/node": "^24.10.1",

@@ -203,3 +203,42 @@ Lightweight config for test runners like Vitest, Jest, or tsx tests:
   }
 }
 ```
+
+---
+
+## 3. Engine Lock Configuration
+
+Guarantee consistent environments across all machines and CI pipelines by locking Node.js, pnpm versions, and preventing npm/yarn usage.
+
+### 3.1 Required `package.json` Configuration
+
+Add the following to enforce Node.js and pnpm versions:
+
+```json
+{
+  "engines": {
+    "node": ">=18.0.0 <23.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm"
+  }
+}
+```
+
+**What this enforces:**
+
+- **Node.js:** 18.x → 22.x
+- **pnpm:** 8+ (recommended: 9.0.0)
+- **Blocks npm/yarn** via `only-allow`
+
+### 3.2 `.npmrc` Strict Mode
+
+Add this to your `.npmrc`:
+
+```text
+engine-strict=true
+```
+
+**Result:** Installation fails automatically if the wrong Node.js or pnpm version is used — perfect for teams and CI consistency.
