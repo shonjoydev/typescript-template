@@ -1,0 +1,31 @@
+{
+  "recommendations": [
+    // Essential
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "EditorConfig.EditorConfig",
+
+    // Code Quality
+    "SonarSource.sonarlint-vscode",
+
+    // TypeScript
+    "yoavbls.pretty-ts-errors",
+    "usernamehw.errorlens",
+
+    // Markdown
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    "bierner.markdown-mermaid",
+    "shd101wyy.markdown-preview-enhanced",
+
+    // Testing
+    "vitest.explorer",
+
+    // Utilities
+    "streetsidesoftware.code-spell-checker",
+  ],
+  "unwantedRecommendations": [
+    "hookyqr.beautify",
+    "ms-vscode.vscode-typescript-tslint-plugin"
+  ]
+}
