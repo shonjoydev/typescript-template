@@ -1,0 +1,52 @@
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+SHA=$3
+
+# Exit early for merges, amends, and other non-standard commits
+case "$COMMIT_SOURCE" in
+    merge|squash|commit)
+        exit 0
+        ;;
+esac
+
+# Try to get branch name, exit if fails
+BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null) || exit 0
+
+# Skip for main/master/develop branches
+case "$BRANCH_NAME" in
+    main|master|develop|staging)
+        exit 0
+        ;;
+esac
+
+# Try to extract ticket number (handles multiple formats)
+# Matches: PROJ-123, ABC-456, JIRA-789, etc.
+TICKET=$(echo "$BRANCH_NAME" | grep -oE '[A-Z]{2,}-[0-9]+' | head -1)
+
+# Only modify if we found a ticket number
+if [ -n "$TICKET" ]; then
+    # Read original message
+    ORIGINAL_MSG=$(cat "$COMMIT_MSG_FILE")
+
+    # Skip if message is empty or only has comments
+    if [ -z "$(echo "$ORIGINAL_MSG" | grep -v '^#')" ]; then
+        exit 0
+    fi
+
+    # Only add if ticket not already present
+    if ! echo "$ORIGINAL_MSG" | grep -q "$TICKET"; then
+        # Prepend ticket to first non-comment line
+        {
+            echo "$ORIGINAL_MSG" | while IFS= read -r line; do
+                if [ "${line#\#}" = "$line" ] && [ -n "$line" ]; then
+                    echo "$TICKET: $line"
+                    break
+                fi
+            done
+            echo "$ORIGINAL_MSG" | tail -n +2
+        } > "$COMMIT_MSG_FILE.tmp"
+        mv "$COMMIT_MSG_FILE.tmp" "$COMMIT_MSG_FILE"
+    fi
+fi
+
+exit 0

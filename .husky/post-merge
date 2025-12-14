@@ -1,0 +1,24 @@
+echo "🔀 Post-merge updates..."
+
+# Check if package.json or package-lock.json changed
+if git diff --name-only HEAD@{1} HEAD | grep -qE "package(-lock)?.json"; then
+    echo "📦 Dependencies changed, installing..."
+    pnpm install
+fi
+
+# Check if .env.example changed
+if git diff --name-only HEAD@{1} HEAD | grep -q ".env.example"; then
+    echo "⚙️  .env.example changed, please update your .env file"
+fi
+
+# Run database migrations if needed
+if git diff --name-only HEAD@{1} HEAD | grep -q "migrations/"; then
+    echo "🗄️  New migrations detected"
+    echo "Run: pnpm run migrate"
+fi
+
+# Rebuild after merge
+echo "🏗️  Rebuilding project..."
+pnpm run build
+
+echo "✅ Post-merge updates complete!"

@@ -1,0 +1,13 @@
+echo "📊 Post-commit actions..."
+
+# Log commit info
+COMMIT_HASH=$(git rev-parse HEAD)
+COMMIT_MSG=$(git log -1 --pretty=%B)
+echo "✅ Committed: $COMMIT_HASH"
+echo "   Message: $COMMIT_MSG"
+
+# Optional: Trigger build or notification
+# curl -X POST https://your-ci-server.com/webhook
+
+# Update local stats/metrics
+# pnpm run update-commit-stats

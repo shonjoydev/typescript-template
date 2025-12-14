@@ -1,0 +1,26 @@
+# Parameters: previous HEAD, new HEAD, branch checkout flag
+PREV_HEAD=$1
+NEW_HEAD=$2
+BRANCH_CHECKOUT=$3
+
+if [ "$BRANCH_CHECKOUT" = "1" ]; then
+    echo "🔄 Switched branch, running updates..."
+
+    # Check if package.json changed
+    if git diff --name-only $PREV_HEAD $NEW_HEAD | grep -q "package.json"; then
+        echo "📦 package.json changed, installing dependencies..."
+        pnpm install
+    fi
+
+    # Check if schema/migrations changed
+    if git diff --name-only $PREV_HEAD $NEW_HEAD | grep -q "migrations/"; then
+        echo "🗄️  Migrations detected, consider running: pnpm run migrate"
+    fi
+
+    # Clean build artifacts
+    echo "🧹 Cleaning build artifacts..."
+    rm -rf dist/ .next/ build/
+
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    echo "✅ Now on branch: $CURRENT_BRANCH"
+fi

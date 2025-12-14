@@ -1,0 +1,24 @@
+echo "📝 Validating commit message..."
+
+# Validate with commitlint
+npx --no -- commitlint --edit ${1}
+
+# Additional custom validation
+COMMIT_MSG=$(cat $1)
+
+# Check minimum length
+if [ ${#COMMIT_MSG} -lt 10 ]; then
+    echo "❌ Commit message too short (minimum 10 characters)"
+    exit 1
+fi
+
+# Check for WIP commits on main branch
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    if echo "$COMMIT_MSG" | grep -iqE "wip|work in progress|todo|fixme"; then
+        echo "❌ WIP commits not allowed on main/master branch"
+        exit 1
+    fi
+fi
+
+echo "✅ Commit message is valid"

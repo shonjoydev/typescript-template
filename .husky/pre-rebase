@@ -1,0 +1,19 @@
+# Parameters: upstream branch, rebased branch
+UPSTREAM=$1
+BRANCH=$2
+
+echo "🔄 Starting rebase from $UPSTREAM..."
+
+# Prevent rebasing main/master
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    echo "❌ Cannot rebase main/master branch"
+    exit 1
+fi
+
+# Ensure working directory is clean
+if ! git diff-index --quiet HEAD --; then
+    echo "❌ Working directory is not clean. Please commit or stash changes."
+    exit 1
+fi
+
+echo "✅ Pre-rebase checks passed"

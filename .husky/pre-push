@@ -1,0 +1,37 @@
+echo "🚀 Running pre-push checks..."
+
+# Validate branch name
+branch="$(git rev-parse --abbrev-ref HEAD)"
+valid_branch_regex="^(feature|bugfix|hotfix|release|docs|refactor|test|chore)\/[a-z0-9._-]+$|^(main|master|develop|staging)$"
+
+if ! echo "$branch" | grep -qE "$valid_branch_regex"; then
+    echo "❌ Invalid branch name: '$branch'"
+    echo "Valid formats: feature/, bugfix/, hotfix/, release/, docs/, refactor/, test/, chore/"
+    exit 1
+fi
+
+# Prevent push to protected branches
+protected_branches="^(main|master)$"
+if echo "$branch" | grep -qE "$protected_branches"; then
+    echo "❌ Direct push to $branch is not allowed!"
+    echo "Please create a pull request instead."
+    exit 1
+fi
+
+# Run full test suite
+echo "🧪 Running full test suite..."
+pnpm run test:run
+
+# Run build to ensure no build errors
+echo "🏗️  Building project..."
+pnpm run build
+
+# Check for console.logs in TypeScript files
+if git diff --cached --name-only | grep -E '\.(ts|tsx)$' | xargs grep -n "console\.log" > /dev/null; then
+    echo "⚠️  Warning: Found console.log statements in staged files"
+    echo "Please remove them before pushing to production"
+    # Uncomment to make it fail:
+    # exit 1
+fi
+
+echo "✅ Pre-push checks passed!"
